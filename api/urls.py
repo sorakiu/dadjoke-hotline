@@ -6,4 +6,5 @@ urlpatterns = [
     path('event', views.event, name='api-event'),
     path('fallback', views.fallback, name='api-fallback'),
     path('inbound', views.inbound, name='api-inbound'),
+    path('healthz', views.healthz, name='api-healthz'),
 ]

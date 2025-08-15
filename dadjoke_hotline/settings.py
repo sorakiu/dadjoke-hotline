@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -24,9 +25,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-a8&sc8mzi&#sa5pydh&+e@2=ymi4hvi%pj&$o(ibkz%d&1+_3n'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', default=False, cast=bool)
 
-ALLOWED_HOSTS = ['key-unduly-yeti.ngrok-free.app','localhost','127.0.0.1']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost').split(',')
 
 
 # Application definition
@@ -38,7 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'api'
+    'api',
 ]
 
 MIDDLEWARE = [
@@ -124,8 +125,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-VONAGE_API_KEY=os.getenv('VONAGE_API_KEY', '')
-VONAGE_API_SECRET=os.getenv('VONAGE_API_SECRET', '')
+VONAGE_API_KEY = config('VONAGE_API_KEY', default='')
+VONAGE_API_SECRET = config('VONAGE_API_SECRET', default='')
+VONAGE_SIGNATURE_SECRET = config('VONAGE_SIGNATURE_SECRET', default='')
+VONAGE_PHONE_NUMBER = config('VONAGE_PHONE_NUMBER', default='')
 
 # Logging Configuration
 LOGGING = {

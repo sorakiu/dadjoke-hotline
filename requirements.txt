@@ -2,3 +2,4 @@
 Django==5.2.5
 vonage==4.5.2
 gunicorn==23.0.0
+python-decouple==3.8

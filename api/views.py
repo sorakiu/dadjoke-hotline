@@ -10,12 +10,58 @@ import json
 import os
 from vonage import Vonage, Auth, HttpClientOptions
 from vonage_messages import Sms
+from vonage_jwt.verify_jwt import verify_signature
+from django.conf import settings
+from functools import wraps
 
 
 logger = logging.getLogger(__name__)
 
+def verify_jwt_signature(view_func):
+    """
+    Decorator to verify JWT signature from Vonage webhooks.
+    Expects JWT token in Authorization header as "Bearer <token>".
+    Returns 401 Unauthorized if signature is invalid.
+    """
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        try:
+            # Get the authorization header
+            auth_header = request.headers.get("Authorization", "")
+            
+            if not auth_header:
+                logger.warning("Missing authorization header")
+                return HttpResponse("Unauthorized: Missing authorization header", status=401)
+            
+            # Split the header to get the token after "Bearer "
+            auth_parts = auth_header.split()
+            
+            if len(auth_parts) != 2 or auth_parts[0].lower() != "bearer":
+                logger.warning("Invalid authorization header format")
+                return HttpResponse("Unauthorized: Invalid authorization header format", status=401)
+            
+            token = auth_parts[1].strip()
+            
+            # Verify the signature using the Vonage secret
+            if verify_signature(token, settings.VONAGE_SIGNATURE_SECRET):
+                logger.info('Valid JWT signature')
+                return view_func(request, *args, **kwargs)
+            else:
+                logger.warning('Invalid JWT signature')
+                return HttpResponse("Unauthorized: Invalid signature", status=401)
+                
+        except KeyError as e:
+            logger.error(f"Missing required header: {e}")
+            return HttpResponse("Unauthorized: Missing authorization header", status=401)
+        except Exception as e:
+            logger.error(f"Error verifying JWT signature: {str(e)}")
+            return HttpResponse("Unauthorized: Signature verification failed", status=401)
+    
+    return wrapper
+
 @csrf_exempt
 @require_GET
+@verify_jwt_signature
 def answer(request):
     logger.info(f"Payload for /api/answer: {request.GET}")
     from_number = request.GET.get('from', 'unknown')
@@ -53,12 +99,14 @@ def answer(request):
 
 @csrf_exempt
 @require_POST
+@verify_jwt_signature
 def event(request):
     logger.info(f"Payload for /api/event: {request.POST}")
     return HttpResponse(status=200)
 
 @csrf_exempt
 @require_GET
+@verify_jwt_signature
 def fallback(request):
     logger.info(f"Payload for /api/fallback: {request.GET}")
     return HttpResponse(status=200)
@@ -66,6 +114,7 @@ def fallback(request):
 # SMS webhook handler for /api/inbound
 @csrf_exempt
 @require_POST
+@verify_jwt_signature
 def inbound(request):
     """
     Handle inbound SMS webhook from Vonage and respond with a dad joke
@@ -91,12 +140,12 @@ def inbound(request):
             dad_joke = "Why don't scientists trust atoms? Because they make up everything!"
         
         # Initialize the Vonage client
-        auth = Auth(api_key=os.getenv("VONAGE_API_KEY"), api_secret=os.getenv("VONAGE_API_SECRET"))
+        auth = Auth(api_key=settings.VONAGE_API_KEY, api_secret=settings.VONAGE_API_SECRET)
         vonage_client = Vonage(auth=auth)
         
         # Send the SMS response with the dad joke
         message = Sms(
-            from_=os.getenv("VONAGE_PHONE_NUMBER"),  # Your Vonage number
+            from_=settings.VONAGE_PHONE_NUMBER,  # Your Vonage number
             to=from_number,
             text=f"Dad Joke Hotline: {dad_joke}"
         )
@@ -119,3 +168,17 @@ def inbound(request):
     except Exception as e:
         logger.error(f"Error processing inbound webhook: {str(e)}")
         return HttpResponse(status=500)
+
+# Health check endpoint
+@require_GET
+def healthz(request):
+    """
+    Simple health check endpoint for monitoring and load balancers.
+    Returns 200 OK with basic status information.
+    """
+    health_data = {
+        "status": "healthy",
+        "service": "dadjoke-hotline",
+        "timestamp": request.META.get("HTTP_DATE", ""),
+    }
+    return JsonResponse(health_data)

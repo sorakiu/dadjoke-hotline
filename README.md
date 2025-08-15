@@ -37,3 +37,9 @@ The application will be available at `http://127.0.0.1:8000`
 - The Gunicorn configuration is in `gunicorn_config.py`
 - Environment variables needed: `VONAGE_API_KEY`, `VONAGE_API_SECRET`
 - The application uses SQLite database by default
+
+
+## Vonage Account Setup
+
+1. go to your [account dashboard](https://dashboard.nexmo.com/settings) and
+    - set your signature method to SHA-256 HMAC signature
