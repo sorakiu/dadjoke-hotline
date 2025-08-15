@@ -30,7 +30,7 @@ def verify_jwt_signature(view_func):
             auth_header = request.headers.get("Authorization", "")
             
             if not auth_header:
-                logger.warning("Missing authorization header")
+                logger.warning("Missing authorization header, available headers are %s", dict(request.headers))
                 return HttpResponse("Unauthorized: Missing authorization header", status=401)
             
             # Split the header to get the token after "Bearer "
