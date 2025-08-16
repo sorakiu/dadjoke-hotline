@@ -127,7 +127,6 @@ def fallback(request):
 # SMS webhook handler for /api/inbound
 @csrf_exempt
 @require_POST
-@verify_jwt_signature
 def inbound(request):
     """
     Handle inbound SMS webhook from Vonage and respond with a dad joke
