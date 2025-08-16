@@ -101,7 +101,20 @@ def answer(request):
 @require_POST
 @verify_jwt_signature
 def event(request):
-    logger.info(f"Payload for /api/event: {request.POST}")
+    try:
+        # Try to parse JSON body first (most common for webhooks)
+        if request.content_type == 'application/json':
+            payload = json.loads(request.body)
+            logger.info(f"Payload for /api/event (JSON): {payload}")
+        else:
+            # Fall back to POST data for form-encoded requests
+            payload = dict(request.POST)
+            logger.info(f"Payload for /api/event (POST): {payload}")
+    except json.JSONDecodeError:
+        logger.warning(f"Invalid JSON in /api/event, raw body: {request.body.decode('utf-8', errors='ignore')}")
+    except Exception as e:
+        logger.error(f"Error parsing /api/event payload: {e}")
+    
     return HttpResponse(status=200)
 
 @csrf_exempt

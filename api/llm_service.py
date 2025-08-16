@@ -1,14 +1,10 @@
-import os
+from django.conf import settings
 from openai import OpenAI
-from dotenv import load_dotenv
-
-# Load environment variables
-load_dotenv()
 
 # Initialize the OpenAI client with OpenRouter's base URL
 client = OpenAI(
     base_url="https://openrouter.ai/api/v1",
-    api_key=os.getenv("OPENROUTER_API_KEY"),
+    api_key=settings.OPENROUTER_API_KEY,
 )
 
 def get_dad_joke():
@@ -20,7 +16,7 @@ def get_dad_joke():
         # Call OpenAI client with proper extra_headers parameter
         response = client.chat.completions.create(
             extra_headers={
-                "HTTP-Referer": "https://key-unduly-yeti.ngrok-free.app",  # Optional but good practice
+                "HTTP-Referer": settings.OPENROUTER_REFERER,  # Optional but good practice
                 "X-Title": "Dad Joke Hotline",  # Optional title for tracking usage
             },
             model="anthropic/claude-3-haiku",  # Use a specific model instead of auto

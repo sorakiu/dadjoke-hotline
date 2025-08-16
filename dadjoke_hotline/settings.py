@@ -164,3 +164,6 @@ LOGGING = {
         },
     },
 }
+
+OPENROUTER_API_KEY = config('OPENROUTER_API_KEY', default='')
+OPENROUTER_REFERER = config('OPENROUTER_REFERER', default='http://localhost')
